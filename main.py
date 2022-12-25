@@ -17,9 +17,12 @@ class Board():
         self.grid = None
         self.x = 0
         self.y = 0
+        self.zwart = 2
+        self.wit = 2
         self.size = size
         self.possible_moves = {}
 
+        # For smoõth bord size switches
         self.SCALE = 150
         if size == 6:
             self.SCALE= 100
@@ -48,21 +51,21 @@ class Board():
             for row in range(0, size):
                 self.grid[column].append(self.EMPTY)
 
-    # Checks how many black and white discs there are
+    # Checks how many black and white discs there are and resets the grey outlined discs to green squares after a move is made.
     def score(self):
-        zwart = 0
-        wit = 0
+        self.zwart = 2
+        self.wit = 2
         for i in range(0, len(self.grid)):
             for j in range(0, len(self.grid)):
                 if self.grid[i][j] == self.BLACK:
-                    zwart += 1
+                    self.zwart += 1
                 elif self.grid[i][j] == self.WHITE:
-                    wit += 1
+                    self.wit += 1
                 else:
                     self.draw.ellipse(((i * self.SCALE + 5, j * self.SCALE + 5)
                                        ,( i* self.SCALE + self.SCALE - 5, j * self.SCALE + self.SCALE - 5)), (46, 139, 87))
 
-        self.score_tracker.configure(text=f"{self.BLACK}: {zwart} Discs\n {self.WHITE}: {wit} Discs")
+        self.score_tracker.configure(text=f"{self.BLACK}: {self.zwart} Discs\n {self.WHITE}: {self.wit} Discs")
 
     # Creating the board, using a Frame and Label class, also putting in the new game button and creating the starting pieces
     def create_board(self, size):
@@ -107,14 +110,15 @@ class Board():
         self.playing_field.bind("<Button-1>", self.mouseclick)
         self.frame.mainloop()
 
-    # Tries to place a grey disk on every single square, but only does so if discs of the opponent can be flipped (if its a legal move)
+    # Places a grey outlined ellipse on every legal/possible move
     def help(self):
         for key in self.possible_moves.keys():
             self.place_disc(key[0], key[1], "grey")
+        self.update_playing_field()
 
     def update_possible_moves(self):
-        ## Fills the dict possible moves with the possible move coordinates as key
-        # and the pieces the move will flip as array of coordinates
+        # Fills the dict possible moves with the possible move coordinates as key
+        # and the pieces the move will flip as a value of that key, in the form of a list of coordinates
         self.possible_moves.clear()
         for i in range(0, len(self.grid)):
             for j in range(0, len(self.grid)):
@@ -123,6 +127,7 @@ class Board():
                 if len(pieces_to_flip) > 0:
                     self.possible_moves[(i, j)] = pieces_to_flip
 
+    #Creates a list of all discs coordinates that a certain move would flip
     def pieces_to_flip(self, h_pos, v_pos):
         # Returns pieces to be flipped with current move as a list
         directions = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]
@@ -156,19 +161,21 @@ class Board():
                     continue
         return pieces_to_flip
 
+    # Places disk on board on coordinates
     def place_disc(self, h_pos, v_pos, color):
-        ## Places disk on board
         if color == "grey":
+            print(h_pos, v_pos, color)
             self.draw.ellipse(((h_pos * self.SCALE + 5, v_pos * self.SCALE + 5),
                                (h_pos * self.SCALE + self.SCALE - 5, v_pos * self.SCALE + self.SCALE - 5)),
                               outline=color, width=5)
+
         else:
             self.grid[h_pos][v_pos] = color
             self.draw.ellipse(((h_pos * self.SCALE + 5, v_pos * self.SCALE + 5),
                                (h_pos * self.SCALE + self.SCALE - 5, v_pos * self.SCALE + self.SCALE - 5)),color)
 
+    # Checks if you may place a disc and flips all discs that need to be to flipped
     def try_placing_disc(self, h_pos, v_pos):
-        print(h_pos, v_pos)
         try:
             if self.grid[h_pos][v_pos] == self.EMPTY:
                 # One Method for All Directions
@@ -180,15 +187,15 @@ class Board():
                     for piece in pieces_to_flip:
                         self.place_disc(piece[0], piece[1], self.active_player)
                     self.score()
-                    if self.active_player == self.BLACK:
-                        self.active_player = self.WHITE
-                    else:
-                        self.active_player = self.BLACK
+                    self.switch_player()
+
         except TypeError:
             print("Can't place here.")
         self.update_playing_field()
         self.update_possible_moves()
+        self.pass_check()
 
+    # refreshes the playing_field image, needed placeholder for some reason.
     def update_playing_field(self):
         self.place_holder = PhotoImage(self.bitmap)
         self.playing_field.configure(image=self.place_holder)
@@ -200,12 +207,16 @@ class Board():
         self.y = ea.y // self.SCALE
         print(self.x, self.y)
         self.try_placing_disc(self.x, self.y)
+        # shows REAL grid :)
         self.debug_function()
 
+    # It destroys the old frame, and then, it re-instantiates this class on the chosen size.
     def new_game(self, size):
         self.frame.destroy()
         self.__init__(size)
 
+
+    # This function speaks for itself
     def create_buttons(self):
         button4 = Button(self.frame, text="4x4", height=2, width=20, background="yellow",
                          command=lambda: self.new_game(4))
@@ -223,6 +234,22 @@ class Board():
                           command=lambda: self.new_game(10))
         button10.place(x=0, y=250)
 
+    def switch_player(self):
+        if self.active_player == self.BLACK:
+            self.active_player = self.WHITE
+        else:
+            self.active_player = self.BLACK
+
+    def pass_check(self):
+        if len(self.possible_moves.keys()) == 0:
+            self.switch_player()
+            self.update_possible_moves()
+            self.update_playing_field()
+            if len(self.possible_moves.keys()) == 0:
+                self.playing_field.configure(width=self.size * self.SCALE, height=self.size * self.SCALE, background="RED")
+                GAME_OVER = Label(self.frame, text=f"GAME OVER\n Black: {self.zwart}\n White: {self.wit}", width=12, height=6, background=self.BLACK, fg=self.WHITE)
+                GAME_OVER.configure(font=('Helvetica bold', 26))
+                GAME_OVER.place(x=int(self.SCALE * self.size / 2)-50, y=int(self.SCALE * self.size / 2)-50)
     #REAL REPRESENTATION BACK-END GRID : >
     def debug_function(self):
         grid1 = []
@@ -235,5 +262,6 @@ class Board():
 
         for t in grid1:
             print(t)
+
 
 board = Board(6)
