@@ -101,6 +101,9 @@ class Board():
         help_button = Button(self.frame, text="Help", height=2, background="Yellow", command=self.help)
         help_button.place(x=175, y=0)
 
+        self.update_possible_moves()
+        self.update_playing_field()
+
         self.playing_field.bind("<Button-1>", self.mouseclick)
         self.frame.mainloop()
 
@@ -163,11 +166,6 @@ class Board():
             self.grid[h_pos][v_pos] = color
             self.draw.ellipse(((h_pos * self.SCALE + 5, v_pos * self.SCALE + 5),
                                (h_pos * self.SCALE + self.SCALE - 5, v_pos * self.SCALE + self.SCALE - 5)),color)
-        self.update_playing_field()
-        self.update_possible_moves()
-        for p in self.grid:
-            print(p)
-        print(self.possible_moves)
 
     def try_placing_disc(self, h_pos, v_pos):
         print(h_pos, v_pos)
@@ -186,7 +184,7 @@ class Board():
                         self.active_player = self.WHITE
                     else:
                         self.active_player = self.BLACK
-        except IndexError:
+        except TypeError:
             print("Can't place here.")
         self.update_playing_field()
         self.update_possible_moves()
