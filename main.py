@@ -152,7 +152,7 @@ class Board():
 
     def place_disc(self, h_pos, v_pos, help=False):
         # Puting The Logic behind placing a disc
-        #Dit is een test vanaf paul b
+        #Dit is een test vanaf paul bart
         try:
             if len(pieces_to_flip) > 0 or self.drawing_board:
                 # if the help button is pressed, grey outlined circles will show legal moves for the current player
