@@ -113,9 +113,12 @@ class Board():
                 self.place_disc(i, j, True)
 
     def update_possible_moves(self):
+        self.possible_moves.clear()
         for i in range(0, len(self.grid)):
             for j in range(0, len(self.grid)):
-                self.place_disc(i, j, True)
+                pieces_to_flip = self.pieces_to_flip(i, j)
+                if len(pieces_to_flip) > 0:
+                    self.possible_moves[(i, j)] = pieces_to_flip
 
     def pieces_to_flip(self, h_pos, v_pos):
         # Returns pieces to be flipped with current move
@@ -150,9 +153,19 @@ class Board():
                     print("oeps")
         return pieces_to_flip
 
-    def place_disc(self, h_pos, v_pos, help=False):
+    def place_disc(self, h_pos, v_pos):
+        self.grid[h_pos][v_pos] =  self.active_player
+        self.draw.ellipse(((h_pos * self.SCALE + 5, v_pos * self.SCALE + 5),
+                           (h_pos * self.SCALE + self.SCALE - 5, v_pos * self.SCALE + self.SCALE - 5)),
+                          self.active_player)
+        if self.active_player == self.BLACK:
+            self.active_player = self.WHITE
+        else:
+            self.active_player = self.BLACK
+    def try_placing_disc(self, h_pos, v_pos):
         # Puting The Logic behind placing a disc
         #Dit is een test vanaf paul bartwebfdhuwvqewqdvqwu
+        pieces_to_flip = self.pieces_to_flip(h_pos, v_pos)
         try:
             if len(pieces_to_flip) > 0 or self.drawing_board:
                 # if the help button is pressed, grey outlined circles will show legal moves for the current player
@@ -163,26 +176,17 @@ class Board():
                 # If the help button isn't pressed, then just draw the disc on the legal location
                 else:
                     # The coordinate of the mouse is transferred to the grid, transforming the "empty" value into a player value
-                    self.grid[h_pos][v_pos] = self.active_player
-                    self.draw.ellipse(((h_pos * self.SCALE + 5, v_pos * self.SCALE + 5),
-                                       (h_pos * self.SCALE + self.SCALE - 5, v_pos * self.SCALE + self.SCALE - 5)),
-                                      self.active_player)
+                    self.place_disc(h_pos, v_pos)
                     # For every piece that was registered that had to be flipped, flip their value in the grid and color in the GUI
                     for piece in pieces_to_flip:
-                        self.grid[piece[0]][piece[1]] = self.active_player
-                        self.draw.ellipse(((piece[0] * self.SCALE + 5, piece[1] * self.SCALE + 5), (
-                        piece[0] * self.SCALE + self.SCALE - 5, piece[1] * self.SCALE + self.SCALE - 5)),
-                                          self.active_player)
+                        self.place_disc(piece[0], piece[1])
                     # If player was black, next player becomes white, and vice versa
-                    if self.active_player == self.BLACK:
-                        self.active_player = self.WHITE
-                    else:
-                        self.active_player = self.BLACK
                     self.score()
-                self.update_playing_field()
 
         except IndexError:
             print("Can't place here.")
+        self.update_possible_moves()
+        print(self.possible_moves)
 
     def update_playing_field(self):
         self.place_holder = PhotoImage(self.bitmap)
@@ -194,7 +198,7 @@ class Board():
         self.x = ea.x // self.SCALE
         self.y = ea.y // self.SCALE
         print(self.x, self.y)
-        self.place_disc(self.x, self.y)
+        self.try_placing_disc(self.x, self.y)
 
     def new_game(self, size):
         self.frame.destroy()
