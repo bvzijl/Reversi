@@ -178,7 +178,6 @@ class Board():
     def try_placing_disc(self, h_pos, v_pos):
         try:
             if self.grid[h_pos][v_pos] == self.EMPTY:
-                # One Method for All Directions
                 pieces_to_flip = self.possible_moves.get((h_pos, v_pos))
                 if len(pieces_to_flip) > 0:
                     # The coordinate of the mouse is transferred to the grid, transforming the "empty" value into a player value
@@ -205,7 +204,6 @@ class Board():
         # Defining the X and Y coordinate of the mouse
         self.x = ea.x // self.SCALE
         self.y = ea.y // self.SCALE
-        print(self.x, self.y)
         self.try_placing_disc(self.x, self.y)
         # shows REAL grid :)
         self.debug_function()
