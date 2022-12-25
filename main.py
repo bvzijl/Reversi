@@ -168,7 +168,7 @@ class Board():
             self.draw.ellipse(((h_pos * self.SCALE + 5, v_pos * self.SCALE + 5),
                                (h_pos * self.SCALE + self.SCALE - 5, v_pos * self.SCALE + self.SCALE - 5)),
                               outline=color, width=5)
-
+    # b
         else:
             self.grid[h_pos][v_pos] = color
             self.draw.ellipse(((h_pos * self.SCALE + 5, v_pos * self.SCALE + 5),
