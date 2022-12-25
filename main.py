@@ -200,6 +200,7 @@ class Board():
         self.y = ea.y // self.SCALE
         print(self.x, self.y)
         self.try_placing_disc(self.x, self.y)
+        self.debug_function()
 
     def new_game(self, size):
         self.frame.destroy()
@@ -222,5 +223,17 @@ class Board():
                           command=lambda: self.new_game(10))
         button10.place(x=0, y=250)
 
+    #REAL REPRESENTATION BACK-END GRID : >
+    def debug_function(self):
+        grid1 = []
+        for k in range(0, self.size):
+            grid1.append([])
+
+        for i in range(0, self.size):
+            for p in range(0, self.size):
+                grid1[i].append(self.grid[p][i])
+
+        for t in grid1:
+            print(t)
 
 board = Board(6)
