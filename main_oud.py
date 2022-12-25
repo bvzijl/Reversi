@@ -1,581 +1,171 @@
-from tkinter import Frame, Label
-
-from PIL import Image
+import tkinter
+from tkinter import Frame, Label, Button
 from PIL.ImageDraw import Draw
 from PIL.ImageTk import PhotoImage
+from PIL import Image
 
-scherm = Frame()
-scherm.master.title("Reversi 2 player game")
-scherm.configure(width=650, height=700)
-scherm.pack()
-Bitmap = Image.new(mode="RGBA", size=(600, 600))
-draw = Draw(Bitmap)
+ALPHABET = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+            'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
-Board = Label(scherm)
-Board.place(x=50, y=50)
-Board.configure(width=600, height=600)
-Board.configure(background="sea green")
+class Board():
+    def __init__(self, size):
+        self.place_holder = None
+        self.bitmap = None
+        self.draw = None
+        self.playing_field = None
+        self.drawing_board = True
+        self.grid = None
+        self.x = 0
+        self.y = 0
+        self.size = size
 
-# tekenen van labels voor 1-6 & a-f
-labA = Label(scherm, text="A");
-labA.place(x=100, y=25)
-labB = Label(scherm, text="B");
-labB.place(x=200, y=25)
-labC = Label(scherm, text="C");
-labC.place(x=300, y=25)
-labD = Label(scherm, text="D");
-labD.place(x=400, y=25)
-labE = Label(scherm, text="E");
-labE.place(x=500, y=25)
-labF = Label(scherm, text="F");
-labF.place(x=600, y=25)
+        self.BLACK = "Black"
+        self.WHITE = "White"
+        self.EMPTY = "empty"
+        self.active_player = "Black"
+        self.SCALE = 75
+        self.frame = Frame()
+        self.active_player_display = Label()
+        self.score_tracker = Label()
+        self.create_grid(size)
+        self.create_board(size)
 
-lab1 = Label(scherm, text="0");
-lab1.place(x=25, y=100)
-lab2 = Label(scherm, text="1");
-lab2.place(x=25, y=200)
-lab3 = Label(scherm, text="2");
-lab3.place(x=25, y=300)
-lab4 = Label(scherm, text="3");
-lab4.place(x=25, y=400)
-lab5 = Label(scherm, text="4");
-lab5.place(x=25, y=500)
-lab6 = Label(scherm, text="5");
-lab6.place(x=25, y=600)
+    # Create Grid
+    def create_grid(self, size):
+        self.grid = []
+        for column in range(0, size):
+            self.grid.append([])
+            for row in range(0, size):
+                self.grid[column].append(self.EMPTY)
 
-player_counter = Label(scherm, text="Black has to lay");
-player_counter.place(x=300, y=660)
-score_tracker = Label(scherm, text="Black: 2 discs\nWhite: 2 discs");
-score_tracker.place(x=0, y=0)
-HEIGHT = 6
-WIDTH = 6
-
-def score():
-    global grid
-    zwart = 0
-    wit = 0
     # Checks how many black and white discs there are
-    for x in grid:
-        for n in x:
-            if n == -1:
-                zwart += 1
-            elif n == 2:
-                wit += 1
-    score_tracker.configure(text=f"Black: {zwart} discs\nWhite: {wit} discs")
-    zwart = 0
-    wit = 0
+    def score(self):
+        zwart = 0
+        wit = 0
+        for row in self.grid:
+            for piece in row:
+                if piece == self.BLACK:
+                    zwart += 1
+                elif piece == self.WHITE:
+                    wit += 1
+        self.score_tracker.configure(text=f"{self.BLACK}: {zwart} Discs\n {self.WHITE}: {wit} Discs")
+
+    def create_board(self, size):
+        self.drawing_board = True
+        self.frame.master.title("Reversi")
+        self.frame.configure(width=(size * self.SCALE*1.1), height=(size * self.SCALE*1.1))
+        self.frame.pack()
+        self.bitmap = Image.new(mode="RGBA", size=(size*self.SCALE, size*self.SCALE))
+        self.draw = Draw(self.bitmap)
+
+        self.playing_field = Label(self.frame)
+        self.playing_field.place(x=50, y=50)
+        self.playing_field.configure(width=size * self.SCALE, height=size * self.SCALE, background="sea green")
+
+        #Create Grid Image
+        for x in range(0, size*self.SCALE, self.SCALE):
+            for y in range(0, size*self.SCALE, self.SCALE):
+                self.draw.rectangle(((x,y), (x+self.SCALE, y+self.SCALE)), outline=self.BLACK)
 
 
-def links():
-    global Y
-    global X
-    global n
-    check = []
-    flag = True
-    x = 1
-    coord = grid[Y][X]
-    try:
-        print("Begin Links")
-        if (X - x) > 0:
-            while flag:
-                if grid[Y][X - x] != coord and grid[Y][X - x] != 0:
-                    print("Vijand!")
-                    x += 1
-                    check.append("Vijand")
-                elif grid[Y][X - x] == coord:
-                    print("Vriend!\nEinde Links\n")
-                    flag = False
-                    check.append("Vriend")
-                elif grid[Y][X - x] == 0:
-                    print("Niemands-Land!\nEinde Links\n")
-                    flag = False
-                    check.append("Niemands-Land")
-            x = 1
-            # flipping enemy discs if flanking on left is true
-            if len(check) > 1 and check[-1] == "Vriend":
-                insluiting = True
-                while insluiting:
-                    if n == -1:
-                        if len(check) > 1 and check[-1] == "Vriend":
-                            if grid[Y][X - x] != coord and grid[Y][X - x] != 0:
-                                grid[Y][X - x] = coord
-                                draw.ellipse((((X - x) * 100 + 5, Y * 100 + 5), ((X - x) * 100 + 95), (Y * 100 + 95)),
-                                             "black")
-                                x += 1
-                            elif grid[Y][X - x] == coord:
-                                insluiting = False
-                    elif n == 2:
-                        if len(check) > 1 and check[-1] == "Vriend":
-                            if grid[Y][X - x] != coord and grid[Y][X - x] != 0:
-                                grid[Y][X - x] = coord
-                                draw.ellipse((((X - x) * 100 + 5, Y * 100 + 5), ((X - x) * 100 + 95), (Y * 100 + 95)),
-                                             "white")
-                                x += 1
-                            elif grid[Y][X - x] == coord:
-                                insluiting = False
-    except IndexError:
-        print("Geen Linkerzijde\n")
+
+        #Place Center Pieces
+        self.place_disc(int(size/2 - 1), int(size/2 -1))
+        self.place_disc(int(size/2), int(size/2 -1))
+        self.place_disc(int(size/2), int(size/2))
+        self.place_disc(int(size/2 -1), int(size/2))
+        self.drawing_board = False
+
+        #Creating Player Display
+        self.active_player_display = Label(self.frame, text=f"{self.active_player}'s turn.")
+        self.active_player_display.place(x=(size * self.SCALE)/2, y= 15)
+
+        self.score_tracker = Label(self.frame, text=f"{self.BLACK}: 2 Discs\n {self.WHITE}: 2 Discs")
+        self.score_tracker.place(x=0, y= 0)
+
+        new_game_button = Button(self.frame, text="New Game", command=self.create_buttons)
+        new_game_button.place(x=100, y =0)
+        self.playing_field.bind("<Button-1>", self.mouseclick)
+        self.frame.mainloop()
 
 
-def rechts():
-    global Y
-    global X
-    global n
-    check = []
-    coord = grid[Y][X]
-    flag = True
-    x = 1
-    # Grid is made with range function, so farthest grid Coordinate is (WIDTH -1, HEIGHT -1)
-    try:
-        print("Begin Rechts")
-        while flag:
-            if grid[Y][X + x] != coord and grid[Y][X + x] != 0:
-                print("Vijand!")
-                x += 1
-                check.append("Vijand")
-            elif grid[Y][X + x] == coord:
-                print("Vriend!\nEinde Rechts\n")
-                flag = False
-                check.append("Vriend")
-            elif grid[Y][X + x] == 0:
-                print("Niemands-Land!\nEinde Rechts\n")
-                flag = False
-                check.append("Niemands-Land")
-        x = 1
-        # Flipping all disks if flanking enemy discs on right is true
-        if len(check) > 1 and check[-1] == "Vriend":
-            insluiting = True
-            while insluiting:
-                if n == -1:
-                    if len(check) > 1 and check[-1] == "Vriend":
-                        if grid[Y][X + x] != coord and grid[Y][X + x] != 0:
-                            grid[Y][X + x] = coord
-                            draw.ellipse((((X + x) * 100 + 5, Y * 100 + 5), ((X + x) * 100 + 95), (Y * 100 + 95)),
-                                         "black")
-                            x += 1
-                        elif grid[Y][X + x] == coord:
-                            insluiting = False
-                elif n == 2:
-                    if len(check) > 1 and check[-1] == "Vriend":
-                        if grid[Y][X + x] != coord and grid[Y][X + x] != 0:
-                            grid[Y][X + x] = coord
-                            draw.ellipse((((X + x) * 100 + 5, Y * 100 + 5), ((X + x) * 100 + 95), (Y * 100 + 95)),
-                                         "white")
-                            x += 1
-                        elif grid[Y][X + x] == coord:
-                            insluiting = False
-                            x = 1
-        x = 1
-    except IndexError:
-        print("Rechter Flip Niet Mogelijk")
+    def place_disc(self, h_pos, v_pos):
+        #Puting The Logic behind placing a disc
+        directions = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]
+        pieces_to_flip = []
+        try:
+            if self.grid[h_pos][v_pos] == self.EMPTY:
+
+                #One Method for All Directions
+                for direction in directions:
+
+                    current_position = [h_pos + direction[0], v_pos + direction[1]]
+                    temporary_pieces_to_flip = []
+                    try:
+                        while True:
+                            # Als je aan het einde jezelf tegen komt, dan wordt de temp lijst van die ENE richting toegevoegd aan de echte lijst
+                            if self.grid[current_position[0]][current_position[1]] == self.active_player:
+                                for piece in temporary_pieces_to_flip:
+                                    pieces_to_flip.append(piece)
+                                break
+                            elif self.grid[current_position[0]][current_position[1]] != self.active_player and self.grid[current_position[0]][current_position[1]] != self.EMPTY:
+                                temporary_pieces_to_flip.append(current_position.copy())
+                                # Verder in huidige richting en vijand toevoegen aan temporary pieces to flip lijst
+                                current_position[0] += direction[0]
+                                current_position[1] += direction[1]
+                                continue
+                            else:
+                                break
+                    except IndexError:
+                        print("oeps")
 
 
-def boven():
-    global Y
-    global X
-    global n
-    coord = grid[Y][X]
-    check = []
-    x = 1
-    flag = True
-    try:
-        print("Begin Boven")
-        if (Y - x) > 0:
-            while flag:
-                if grid[Y - x][X] != coord and grid[Y - x][X] != 0:
-                    print("Vijand!")
-                    x += 1
-                    check.append("Vijand")
-                elif grid[Y - x][X] == coord:
-                    print("Vriend!\nEinde Boven\n")
-                    flag = False
-                    check.append("Vriend")
-                elif grid[Y - x][X] == 0:
-                    print("Niemands-Land!\nEinde Boven\n")
-                    flag = False
-                    check.append("Niemands-Land")
-            x = 1
-            # Flipping all disks if flanking enemy discs on right is true
-            if len(check) > 1 and check[-1] == "Vriend":
-                insluiting = True
-                while insluiting:
-                    if n == -1:
-                        if len(check) > 1 and check[-1] == "Vriend":
-                            if grid[Y - x][X] != coord and grid[Y - x][X] != 0:
-                                grid[Y - x][X] = coord
-                                draw.ellipse(((X * 100 + 5, (Y - x) * 100 + 5), (X * 100 + 95, (Y - x) * 100 + 95)),
-                                             "black")
-                                x += 1
-                            elif grid[Y - x][X] == coord:
-                                insluiting = False
-                    elif n == 2:
-                        if len(check) > 1 and check[-1] == "Vriend":
-                            if grid[Y - x][X] != coord and grid[Y - x][X] != 0:
-                                grid[Y - x][X] = coord
-                                draw.ellipse(((X * 100 + 5, (Y - x) * 100 + 5), (X * 100 + 95, (Y - x) * 100 + 95)),
-                                             "white")
-                                x += 1
-                            elif grid[Y - x][X] == coord:
-                                insluiting = False
-                                x = 1
-    except IndexError:
-        print("Geen Bovenkant\n")
+
+                if len(pieces_to_flip) > 0 or self.drawing_board:
+                    self.grid[h_pos][v_pos] = self.active_player
+                    self.draw.ellipse(((h_pos*self.SCALE + 5, v_pos*self.SCALE + 5), (h_pos*self.SCALE + self.SCALE-5 , v_pos*self.SCALE + self.SCALE-5)), self.active_player)
+                    for piece in pieces_to_flip:
+                        self.grid[piece[0]][piece[1]] = self.active_player
+                        self.draw.ellipse(((piece[0]*self.SCALE + 5, piece[1]*self.SCALE + 5), (piece[0]*self.SCALE + self.SCALE-5, piece[1]*self.SCALE + self.SCALE-5)), self.active_player)
+                    if self.active_player == self.BLACK:
+                        self.active_player = self.WHITE
+                    else:
+                        self.active_player = self.BLACK
+            self.update_playing_field()
+
+        except IndexError:
+            print("Can't place here.")
+
+    def update_playing_field(self):
+        self.place_holder = PhotoImage(self.bitmap)
+        self.playing_field.configure(image=self.place_holder)
+        self.active_player_display.configure(text=f"{self.active_player}'s turn")
+        self.score()
 
 
-def beneden():
-    global n
-    global Y
-    global X
-    coord = grid[Y][X]
-    check = []
-    flag = True
-    x = 1
-    try:
-        print("Begin Beneden")
-        while flag:
-            if grid[Y + x][X] != coord and grid[Y + x][X] != 0:
-                print("Vijand!")
-                x += 1
-                check.append("Vijand")
-            elif grid[Y + x][X] == coord:
-                print("Vriend!\nEinde Beneden\n")
-                flag = False
-                check.append("Vriend")
-            elif grid[Y + x][X] == 0:
-                print("Niemands-Land!\nEinde Beneden\n")
-                flag = False
-                check.append("Niemands-Land")
-        x = 1
-        # Flipping all disks if flanking enemy discs on right is true
-        if len(check) > 1 and check[-1] == "Vriend":
-            insluiting = True
-            while insluiting:
-                if n == -1:
-                    if len(check) > 1 and check[-1] == "Vriend":
-                        if grid[Y + x][X] != coord and grid[Y + x][X] != 0:
-                            grid[Y + x][X] = coord
-                            draw.ellipse(((X * 100 + 5, (Y + x) * 100 + 5), (X * 100 + 95, (Y + x) * 100 + 95)),
-                                         "black")
-                            x += 1
-                        elif grid[Y + x][X] == coord:
-                            insluiting = False
-                elif n == 2:
-                    if len(check) > 1 and check[-1] == "Vriend":
-                        if grid[Y + x][X] != coord and grid[Y + x][X] != 0:
-                            grid[Y + x][X] = coord
-                            draw.ellipse(((X * 100 + 5, (Y + x) * 100 + 5), (X * 100 + 95, (Y + x) * 100 + 95)),
-                                         "white")
-                            x += 1
-                        elif grid[Y + x][X] == coord:
-                            insluiting = False
-                            x = 1
-    except IndexError:
-        print("Flip via onder niet mogelijk\n")
+    def mouseclick(self, ea):
+        # Defining the X and Y coordinate of the mouse
+        self.x = ea.x // self.SCALE
+        self.y = ea.y // self.SCALE
+        print(self.x, self.y)
+        self.place_disc(self.x, self.y)
+
+    def new_game(self, size):
+        self.frame.destroy()
+        self.__init__(size)
+
+    def create_buttons(self):
+        button4 = Button(self.frame, text="4x4", command= lambda: self.new_game(4))
+        button4.place(x=self.size*self.SCALE//2, y=100)
+
+        button6 = Button(self.frame, text="6x6", command= lambda: self.new_game(6))
+        button6.place(x=self.size * self.SCALE // 2, y=200)
+
+        button8 = Button(self.frame, text="8x8", command= lambda: self.new_game(8))
+        button8.place(x=self.size * self.SCALE // 2, y=300)
+
+        button10 = Button(self.frame, text="10x10", command= lambda: self.new_game(10))
+        button10.place(x=self.size * self.SCALE // 2, y=400)
 
 
-def check_links_boven():
-    global n
-    global Y
-    global X
-    coord = grid[Y][X]
-    check = []
-    flag = True
-    x = 1
-    try:
-        if (Y - x) >= 0 and (X - x) >= 0:
-            print("Check Links Boven")
-            while flag:
-                if grid[Y - x][X - x] != coord and grid[Y - x][X - x] != 0:
-                    print("Vijand!")
-                    check.append("Vijand")
-                    x += 1
-                elif grid[Y - x][X - x] == coord:
-                    print("Vriend!\nEinde Links Boven\n")
-                    check.append("Vriend")
-                    flag = False
-                elif grid[Y - x][X - x] == 0:
-                    print("Niemands-Land!\nEinde Links Boven\n")
-                    check.append("Niemands-Land")
-                    flag = False
-            x = 1
-            if len(check) > 1 and check[-1] == "Vriend":
-                insluiting = True
-                while insluiting:
-                    if n == -1:
-                        if len(check) > 1 and check[-1] == "Vriend":
-                            if grid[Y - x][X - x] != coord and grid[Y - x][X - x] != 0:
-                                grid[Y - x][X - x] = coord
-                                draw.ellipse(
-                                    (((X - x) * 100 + 5, (Y - x) * 100 + 5), ((X - x) * 100 + 95, (Y - x) * 100 + 95)),
-                                    "black")
-                                x += 1
-                            elif grid[Y - x][X - x] == coord:
-                                insluiting = False
-                    elif n == 2:
-                        if len(check) > 1 and check[-1] == "Vriend":
-                            if grid[Y - x][X - x] != coord and grid[Y - x][X - x] != 0:
-                                grid[Y - x][X - x] = coord
-                                draw.ellipse(
-                                    (((X - x) * 100 + 5, (Y - x) * 100 + 5), ((X - x) * 100 + 95, (Y - x) * 100 + 95)),
-                                    "white")
-                                x += 1
-                            elif grid[Y - x][X - x] == coord:
-                                insluiting = False
-                                x = 1
-    except  IndexError:
-        print("Geen Links Boven")
-
-
-def check_rechts_boven():
-    global n
-    global Y
-    global X
-    coord = grid[Y][X]
-    check = []
-    flag = True
-    x = 1
-    try:
-        print("Check Rechts Boven")
-        while flag:
-            if grid[Y - x][X + x] != coord and grid[Y - x][X + x] != 0:
-                print("Vijand!")
-                check.append("Vijand")
-                x += 1
-            elif grid[Y - x][X + x] == coord:
-                print("Vriend!\nEinde Rechts Boven\n")
-                check.append("Vriend")
-                flag = False
-            elif grid[Y - x][X + x] == 0:
-                print("Niemands-Land!\nEinde Rechts Boven\n")
-                check.append("Niemands-Land")
-                flag = False
-        x = 1
-        if len(check) > 1 and check[-1] == "Vriend":
-            insluiting = True
-            while insluiting:
-                if n == -1:
-                    if len(check) > 1 and check[-1] == "Vriend":
-                        if grid[Y - x][X + x] != coord and grid[Y - x][X + x] != 0:
-                            grid[Y - x][X + x] = coord
-                            draw.ellipse(
-                                (((X + x) * 100 + 5, (Y - x) * 100 + 5), ((X + x) * 100 + 95, (Y - x) * 100 + 95)),
-                                "black")
-                            x += 1
-                        elif grid[Y - x][X + x] == coord:
-                            insluiting = False
-                elif n == 2:
-                    if len(check) > 1 and check[-1] == "Vriend":
-                        if grid[Y - x][X + x] != coord and grid[Y - x][X + x] != 0:
-                            grid[Y - x][X + x] = coord
-                            draw.ellipse(
-                                (((X + x) * 100 + 5, (Y - x) * 100 + 5), ((X + x) * 100 + 95, (Y - x) * 100 + 95)),
-                                "white")
-                            x += 1
-                        elif grid[Y - x][X + x] == coord:
-                            insluiting = False
-                            x = 1
-    except IndexError:
-        print("Geen Rechts Boven")
-
-
-def check_rechts_onder():
-    global n
-    global Y
-    global X
-    coord = grid[Y][X]
-    check = []
-    flag = True
-    x = 1
-    try:
-        print("Check Rechts Onder")
-        while flag:
-            if grid[Y + x][X + x] != coord and grid[Y + x][X + x] != 0:
-                print("Vijand!")
-                check.append("Vijand")
-                x += 1
-            elif grid[Y + x][X + x] == coord:
-                print("Vriend!\nEinde Rechts Onder\n")
-                check.append("Vriend")
-                flag = False
-            elif grid[Y + x][X + x] == 0:
-                print("Niemands-Land!\nEinde Rechts Onder\n")
-                check.append("Niemands-Land")
-                flag = False
-        x = 1
-        if len(check) > 1 and check[-1] == "Vriend":
-            insluiting = True
-            while insluiting:
-                if n == -1:
-                    if len(check) > 1 and check[-1] == "Vriend":
-                        if grid[Y + x][X + x] != coord and grid[Y + x][X + x] != 0:
-                            grid[Y + x][X + x] = coord
-                            draw.ellipse(
-                                (((X + x) * 100 + 5, (Y + x) * 100 + 5), ((X + x) * 100 + 95, (Y + x) * 100 + 95)),
-                                "black")
-                            x += 1
-                        elif grid[Y + x][X + x] == coord:
-                            insluiting = False
-                elif n == 2:
-                    if len(check) > 1 and check[-1] == "Vriend":
-                        if grid[Y + x][X + x] != coord and grid[Y + x][X + x] != 0:
-                            grid[Y + x][X + x] = coord
-                            draw.ellipse(
-                                (((X + x) * 100 + 5, (Y + x) * 100 + 5), ((X + x) * 100 + 95, (Y + x) * 100 + 95)),
-                                "white")
-                            x += 1
-                        elif grid[Y + x][X + x] == coord:
-                            insluiting = False
-                            x = 1
-    except IndexError:
-        print("Geen Rechts Onder")
-
-
-def check_links_onder():
-    global n
-    global Y
-    global X
-    coord = grid[Y][X]
-    check = []
-    flag = True
-    x = 1
-    try:
-        print("Check Links Onder")
-        while flag:
-            if grid[Y + x][X - x] != coord and grid[Y + x][X - x] != 0:
-                print("Vijand!")
-                check.append("Vijand")
-                x += 1
-            elif grid[Y + x][X - x] == coord:
-                print("Vriend!\nEinde Links Onder\n")
-                check.append("Vriend")
-                flag = False
-            elif grid[Y + x][X - x] == 0:
-                print("Niemands-Land!\nEinde Links Onder\n")
-                check.append("Niemands-Land")
-                flag = False
-        x = 1
-        if len(check) > 1 and check[-1] == "Vriend":
-            insluiting = True
-            while insluiting:
-                if n == -1:
-                    if len(check) > 1 and check[-1] == "Vriend":
-                        if grid[Y + x][X - x] != coord and grid[Y + x][X - x] != 0:
-                            grid[Y + x][X - x] = coord
-                            draw.ellipse(
-                                (((X - x) * 100 + 5, (Y + x) * 100 + 5), ((X - x) * 100 + 95, (Y + x) * 100 + 95)),
-                                "black")
-                            x += 1
-                        elif grid[Y + x][X - x] == coord:
-                            insluiting = False
-                elif n == 2:
-                    if len(check) > 1 and check[-1] == "Vriend":
-                        if grid[Y + x][X - x] != coord and grid[Y + x][X - x] != 0:
-                            grid[Y + x][X - x] = coord
-                            draw.ellipse(
-                                (((X - x) * 100 + 5, (Y + x) * 100 + 5), ((X - x) * 100 + 95, (Y + x) * 100 + 95)),
-                                "white")
-                            x += 1
-                        elif grid[Y + x][X - x] == coord:
-                            insluiting = False
-                            x = 1
-    except IndexError:
-        print("Geen Links Onder")
-
-
-# tekenen van rectangles met step=100
-def Rooster():
-    for x in range(0, 600, 100):
-        for y in range(0, 600, 100):
-            draw.rectangle(((x, y), (x + 100, y + 100)), outline="black")
-
-
-Rooster()
-
-grid = []
-for row in range(HEIGHT):
-    # Add an empty array that will hold each cell
-    # in this row
-    grid.append([])
-    for column in range(WIDTH):
-        grid[row].append(0)  # Append a cell
-
-
-def StartPosition():
-    grid[2][2] = -1
-    grid[2][3] = 2
-    grid[3][2] = 2
-    grid[3][3] = -1
-
-    draw.ellipse(((205, 205), 295, 295), "black")
-    draw.ellipse(((305, 305), 395, 395), "black")
-    draw.ellipse(((305, 205), 395, 295), "white")
-    draw.ellipse(((205, 305), 295, 395), "white")
-
-
-StartPosition()
-
-Y = 0
-X = 0
-n = 2
-
-
-def MouseClick(ea):
-    global Y
-    global X
-    global n
-    x_ellips = (ea.x // 100) * 100
-    y_ellips = (ea.y // 100) * 100
-
-    column = ea.x // (100)
-    row = ea.y // (100)
-    Y = row
-    X = column
-    # Set that location to one
-    print(f"Click {ea.x},{ea.y}", "Grid coordinates: ", column, row)
-    if grid[row][column] > 0 or grid[row][column] < 0:
-        print("There's already a disc here")
-    else:
-        n = 1 - n
-        grid[row][column] = n
-        if grid[row][column] == 2:
-            draw.ellipse(((x_ellips + 5, y_ellips + 5), x_ellips + 95, y_ellips + 95), "white")
-            grid[row][column] = 2
-            player_counter.configure(text="Black Has to Lay")
-
-            print(f"{grid[0]}\n{grid[1]}\n{grid[2]}\n{grid[3]}\n{grid[4]}\n{grid[5]}\n")
-            print(f"n: {n}")
-            links()
-            rechts()
-            boven()
-            beneden()
-            check_links_boven()
-            check_links_onder()
-            check_rechts_boven()
-            check_rechts_onder()
-            score()
-        if grid[row][column] == -1:
-            draw.ellipse(((x_ellips + 5, y_ellips + 5), x_ellips + 95, y_ellips + 95), "black")
-            grid[row][column] = -1
-            player_counter.configure(text="White Has to Lay")
-            print(f"{grid[0]}\n{grid[1]}\n{grid[2]}\n{grid[3]}\n{grid[4]}\n{grid[5]}\n")
-            print(f"n: {n}")
-            links()
-            rechts()
-            boven()
-            beneden()
-            check_links_boven()
-            check_links_onder()
-            check_rechts_boven()
-            check_rechts_onder()
-            score()
-
-    global foto
-    foto = PhotoImage(Bitmap)
-    Board.configure(image=foto)
-
-
-omgezetPlaatje = PhotoImage(Bitmap)
-Board.configure(image=omgezetPlaatje)
-Board.bind("<Button-1>", MouseClick)
-
-scherm.mainloop()
+board = Board(6)
