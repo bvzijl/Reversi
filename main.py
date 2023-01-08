@@ -5,7 +5,9 @@ from PIL import Image
 
 ALPHABET = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
             'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+
 NUMBERS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+
 
 class Board:
     def __init__(self, size):
@@ -25,7 +27,7 @@ class Board:
         # For smooth bord size switches
         self.SCALE = 150
         if size == 6:
-            self.SCALE= 100
+            self.SCALE = 100
         if size == 8:
             self.SCALE = 75
         if size == 10:
@@ -51,10 +53,10 @@ class Board:
             for row in range(0, size):
                 self.grid[column].append(self.EMPTY)
 
-    # Checks how many black and white discs there are and resets the grey outlined discs to green squares after a move is made.
+    # Checks how many black and white discs there are and resets the help discs to green squares after a move is made.
     def score(self):
-        self.zwart = 2
-        self.wit = 2
+        self.zwart = 0
+        self.wit = 0
         for i in range(0, len(self.grid)):
             for j in range(0, len(self.grid)):
                 if self.grid[i][j] == self.BLACK:
@@ -63,41 +65,42 @@ class Board:
                     self.wit += 1
                 # Can't be bothered putting it in a separate function
                 else:
-                    self.draw.ellipse(((i * self.SCALE + 5, j * self.SCALE + 5)
-                                       ,( i* self.SCALE + self.SCALE - 5, j * self.SCALE + self.SCALE - 5)), (46, 139, 87))
+                    self.draw.ellipse(((i * self.SCALE + 5, j * self.SCALE + 5), (i * self.SCALE + self.SCALE - 5, j
+                                                                                  * self.SCALE + self.SCALE - 5)),
+                                      (46, 139, 87))
 
         self.score_tracker.configure(text=f"{self.BLACK}: {self.zwart} Discs\n {self.WHITE}: {self.wit} Discs")
 
-    # Creating the board, using a Frame and Label class, also putting in the new game button and creating the starting pieces
+    # Creating the board, using a Frame and Label class. Puts in the new game button and creating the starting pieces
     def create_board(self, size):
         self.drawing_board = True
         self.frame.master.title("Reversi")
-        self.frame.configure(width=(size * self.SCALE *1.3), height=(size * self.SCALE *1.3))
+        self.frame.configure(width=(size * self.SCALE * 1.3), height=(size * self.SCALE * 1.3))
         self.frame.pack()
-        self.bitmap = Image.new(mode="RGBA", size=(size *self.SCALE, size *self.SCALE))
+        self.bitmap = Image.new(mode="RGBA", size=(size * self.SCALE, size * self.SCALE))
         self.draw = Draw(self.bitmap)
 
         self.playing_field = Label(self.frame)
         self.playing_field.place(x=50, y=50)
         self.playing_field.configure(width=size * self.SCALE, height=size * self.SCALE, background="sea green")
 
-        list = []
+        # Add Labels to the side of the board
+        label_list = []
         for x in range(0, size):
-            position_label = Label(self.frame, text=NUMBERS[x])
-            list.append(position_label)
-            print(list)
+            number_label = Label(self.frame, text=NUMBERS[x])
+            letter_label = Label(self.frame, text=ALPHABET[x])
+            label_list.append([number_label, letter_label])
 
-        for l in list:
-            for z in range(0, size):
-                m = list.index(l) + 1
-                l.place(x=25, y=self.SCALE*m)
+        for position in range(0, size):
+            indicator = label_list[position]
+            m = label_list.index(indicator) + 1
+            label_list[position][0].place(x=25, y=self.SCALE * m)
+            label_list[position][1].place(x=self.SCALE * m, y=660)
 
-            # position_label = Label(self.frame, text=NUMBERS[x])
-            # position_label.place(x=20, y=size*self.SCALE)
         # Create Grid Image
-        for x in range(0, size *self.SCALE, self.SCALE):
-            for y in range(0, size *self.SCALE, self.SCALE):
-                self.draw.rectangle(((x ,y), ( x +self.SCALE, y+ self.SCALE)), outline=self.BLACK)
+        for x in range(0, size * self.SCALE, self.SCALE):
+            for y in range(0, size * self.SCALE, self.SCALE):
+                self.draw.rectangle(((x, y), (x + self.SCALE, y + self.SCALE)), outline=self.BLACK)
 
         # Place Center Pieces
         self.place_disc(int(size / 2 - 1), int(size / 2 - 1), self.BLACK)
@@ -107,12 +110,13 @@ class Board:
 
         # Creating Player Display
         self.active_player_display = Label(self.frame, text=f"{self.active_player}'s turn.")
-        self.active_player_display.place(x=(size * self.SCALE) / 2, y=size * self.SCALE + self.SCALE)
+        self.active_player_display.place(x=(size * self.SCALE) / 2, y=size * self.SCALE + 100)
 
         self.score_tracker = Label(self.frame, text=f"{self.BLACK}: 2 Discs\n {self.WHITE}: 2 Discs")
         self.score_tracker.place(x=0, y=0)
 
-        new_game_button = Button(self.frame, text="New Game", height=2, command=self.create_buttons,background="Yellow")
+        new_game_button = Button(self.frame, text="New Game", height=2, command=self.create_buttons,
+                                 background="Yellow")
         new_game_button.place(x=100, y=0)
 
         help_button = Button(self.frame, text="Help", height=2, background="Yellow", command=self.help)
@@ -155,7 +159,8 @@ class Board:
                     while True:
                         if current_position[0] < 0 or current_position[1] < 0:
                             break
-                        # Als je aan het einde jezelf tegen komt, dan wordt de temporary lijst van die ENE-richting toegevoegd aan de echte lijst
+                        '''Als je aan het einde jezelf tegen komt, dan wordt de temporary lijst van die ENE 
+                        richting toegevoegd aan de echte lijst'''
                         if self.grid[current_position[0]][current_position[1]] == self.active_player:
                             for piece in temporary_pieces_to_flip:
                                 pieces_to_flip.append(piece)
@@ -182,11 +187,12 @@ class Board:
             self.draw.ellipse(((h_pos * self.SCALE + 5, v_pos * self.SCALE + 5),
                                (h_pos * self.SCALE + self.SCALE - 5, v_pos * self.SCALE + self.SCALE - 5)),
                               outline=color, width=5)
-    # b
+        # b
         else:
             self.grid[h_pos][v_pos] = color
-            self.draw.ellipse(((h_pos * self.SCALE + 5, v_pos * self.SCALE + 5),
-                               (h_pos * self.SCALE + self.SCALE - 5, v_pos * self.SCALE + self.SCALE - 5)),color)
+            self.draw.ellipse(((h_pos * self.SCALE + 5, v_pos * self.SCALE + 5), (h_pos * self.SCALE + self.SCALE - 5,
+                                                                                  v_pos * self.SCALE + self.SCALE - 5)),
+                              color)
 
     # Checks if you may place a disc and flips all discs that need to be to flipped
     def try_placing_disc(self, h_pos, v_pos):
@@ -195,9 +201,11 @@ class Board:
                 # One Method for All Directions
                 pieces_to_flip = self.possible_moves.get((h_pos, v_pos))
                 if len(pieces_to_flip) > 0:
-                    # The coordinate of the mouse is transferred to the grid, transforming the "empty" value into a player value
+                    # The coordinate of the mouse is transferred to the grid,
+                    # transforming the "empty" value into a player value
                     self.place_disc(h_pos, v_pos, self.active_player)
-                    # For every piece that was registered that had to be flipped, flip their value in the grid and color in the GUI
+                    # For every piece that was registered that had to be flipped,
+                    # flip their value in the grid and color in the GUI
                     for piece in pieces_to_flip:
                         self.place_disc(piece[0], piece[1], self.active_player)
                     self.score()
@@ -253,19 +261,21 @@ class Board:
         else:
             self.active_player = self.BLACK
 
-    # If there are no legal moves, pass the turn to the other player. If both players do not have legal moves, Game is Over.
+    # If there are no legal moves, pass the turn to the opponent. If both players do not have legal moves, Game Over.
     def pass_check(self):
         if len(self.possible_moves.keys()) == 0:
             self.switch_player()
             self.update_possible_moves()
             self.update_playing_field()
             if len(self.possible_moves.keys()) == 0:
-                self.playing_field.configure(width=self.size * self.SCALE, height=self.size * self.SCALE, background="RED")
-                GAME_OVER = Label(self.frame, text=f"GAME OVER\n Black: {self.zwart}\n White: {self.wit}", width=12, height=6, background=self.BLACK, fg=self.WHITE)
+                self.playing_field.configure(width=self.size * self.SCALE, height=self.size * self.SCALE,
+                                             background="RED")
+                GAME_OVER = Label(self.frame, text=f"GAME OVER\n Black: {self.zwart}\n White: {self.wit}", width=12,
+                                  height=6, background=self.BLACK, fg=self.WHITE)
                 GAME_OVER.configure(font=('Helvetica bold', 26))
-                GAME_OVER.place(x=int(self.SCALE * self.size / 2)-50, y=int(self.SCALE * self.size / 2)-50)
+                GAME_OVER.place(x=int(self.SCALE * self.size / 2) - 50, y=int(self.SCALE * self.size / 2) - 50)
 
-    # REAL REPRESENTATION BACK-END GRID : >
+    # REAL REPRESENTATION BACK-END GRID :>
     def debug_function(self):
         grid1 = []
         for k in range(0, self.size):
