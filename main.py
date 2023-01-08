@@ -1,4 +1,3 @@
-import tkinter
 from tkinter import Frame, Label, Button
 from PIL.ImageDraw import Draw
 from PIL.ImageTk import PhotoImage
@@ -6,8 +5,9 @@ from PIL import Image
 
 ALPHABET = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
             'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+NUMBERS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
 
-class Board():
+class Board:
     def __init__(self, size):
         self.place_holder = None
         self.bitmap = None
@@ -22,7 +22,7 @@ class Board():
         self.size = size
         self.possible_moves = {}
 
-        # For smoõth bord size switches
+        # For smooth bord size switches
         self.SCALE = 150
         if size == 6:
             self.SCALE= 100
@@ -61,6 +61,7 @@ class Board():
                     self.zwart += 1
                 elif self.grid[i][j] == self.WHITE:
                     self.wit += 1
+                # Can't be bothered putting it in a separate function
                 else:
                     self.draw.ellipse(((i * self.SCALE + 5, j * self.SCALE + 5)
                                        ,( i* self.SCALE + self.SCALE - 5, j * self.SCALE + self.SCALE - 5)), (46, 139, 87))
@@ -80,6 +81,19 @@ class Board():
         self.playing_field.place(x=50, y=50)
         self.playing_field.configure(width=size * self.SCALE, height=size * self.SCALE, background="sea green")
 
+        list = []
+        for x in range(0, size):
+            position_label = Label(self.frame, text=NUMBERS[x])
+            list.append(position_label)
+            print(list)
+
+        for l in list:
+            for z in range(0, size):
+                m = list.index(l) + 1
+                l.place(x=25, y=self.SCALE*m)
+
+            # position_label = Label(self.frame, text=NUMBERS[x])
+            # position_label.place(x=20, y=size*self.SCALE)
         # Create Grid Image
         for x in range(0, size *self.SCALE, self.SCALE):
             for y in range(0, size *self.SCALE, self.SCALE):
@@ -123,13 +137,13 @@ class Board():
         for i in range(0, len(self.grid)):
             for j in range(0, len(self.grid)):
                 pieces_to_flip = self.pieces_to_flip(i, j).copy()
-                # If pieces to flip > 0 its a legal move
+                # If pieces to flip > 0 it's a legal move
                 if len(pieces_to_flip) > 0:
                     self.possible_moves[(i, j)] = pieces_to_flip
 
-    #Creates a list of all discs coordinates that a certain move would flip
+    # Creates a list of all discs coordinates that a certain move would flip
     def pieces_to_flip(self, h_pos, v_pos):
-        # Returns pieces to be flipped with current move as a list
+        # Return pieces to be flipped with current move as a list
         directions = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]
         pieces_to_flip = []
         if self.grid[h_pos][v_pos] == self.EMPTY:
@@ -141,7 +155,7 @@ class Board():
                     while True:
                         if current_position[0] < 0 or current_position[1] < 0:
                             break
-                        # Als je aan het einde jezelf tegen komt, dan wordt de temp lijst van die ENE richting toegevoegd aan de echte lijst
+                        # Als je aan het einde jezelf tegen komt, dan wordt de temporary lijst van die ENE-richting toegevoegd aan de echte lijst
                         if self.grid[current_position[0]][current_position[1]] == self.active_player:
                             for piece in temporary_pieces_to_flip:
                                 pieces_to_flip.append(piece)
@@ -156,7 +170,7 @@ class Board():
                             continue
                         else:
                             break
-                # Als de functie uit ge grid breekt dan stopt ie en gaat hij door naar de volgende richting
+                # Als de functie uit de grid breekt dan stopt het en gaat hij door naar de volgende richting
                 except IndexError:
                     continue
         return pieces_to_flip
@@ -215,7 +229,6 @@ class Board():
         self.frame.destroy()
         self.__init__(size)
 
-
     # This function speaks for itself
     def create_buttons(self):
         button4 = Button(self.frame, text="4x4", height=2, width=20, background="yellow",
@@ -240,6 +253,7 @@ class Board():
         else:
             self.active_player = self.BLACK
 
+    # If there are no legal moves, pass the turn to the other player. If both players do not have legal moves, Game is Over.
     def pass_check(self):
         if len(self.possible_moves.keys()) == 0:
             self.switch_player()
@@ -250,7 +264,8 @@ class Board():
                 GAME_OVER = Label(self.frame, text=f"GAME OVER\n Black: {self.zwart}\n White: {self.wit}", width=12, height=6, background=self.BLACK, fg=self.WHITE)
                 GAME_OVER.configure(font=('Helvetica bold', 26))
                 GAME_OVER.place(x=int(self.SCALE * self.size / 2)-50, y=int(self.SCALE * self.size / 2)-50)
-    #REAL REPRESENTATION BACK-END GRID : >
+
+    # REAL REPRESENTATION BACK-END GRID : >
     def debug_function(self):
         grid1 = []
         for k in range(0, self.size):
